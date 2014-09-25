@@ -1,0 +1,61 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        <style>
+            canvas {
+                border: 1px solid black;
+                font-family: "Helvetica Neue", "Arial", "Lucida Grande", "Lucida Sans Unicode", "Microsoft YaHei", sans-serif;
+                font-size: 13px;
+                line-height: 1.5;
+                color: #474747;
+            }
+            
+            #toolbar {
+                width: 590px;
+                border: 1px solid black;
+                border-bottom: 0px;
+                padding: 5px;
+                background-color: #f8f8f8;
+            }
+            
+            input[type = 'text'] {
+                width: 30px;
+                margin: 0px 5px 0px 5px;
+            }
+            
+            label {
+                margin-left: 40px;
+            }
+            
+            label:first-of-type {
+                margin-left: 0px;
+            }
+            
+            input[type = 'button'] {
+                float: right;
+            }
+            
+            #colorSquare {
+                position: relative;
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                background-color: blue;
+                top: 4px;
+            }
+        </style>
+        <script src="events.js"></script>
+        <script src="TicTacToe.js"></script>
+        <script src="kinetic-v4.7.2.js"></script>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script>
+        	window.onload = function(){
+        		TicTacToe.init('myCanvas');
+        	}
+            
+        </script>        
+    </body>
+</html>
