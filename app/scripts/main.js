@@ -1,1 +1,5 @@
-console.log('\'Allo \'Allo!');
+window.onload = function(){
+	TicTacToe.init('myCanvas');
+}
+            
+
