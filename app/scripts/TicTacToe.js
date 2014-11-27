@@ -1,3 +1,4 @@
+'use strict';
 /**
  * Gra w kółko i krzyżyk na 5
  * @author Robert Urbański
@@ -12,8 +13,8 @@ var TicTacToe = {
 	lang: 'pl',
 	Translates: {
 		pl: {
-			sett: "Ustawienia",
-			newG: "Nowa gra"
+			sett: 'Ustawienia',
+			newG: 'Nowa gra'
 		}
 	},
 	rectStyle: {
@@ -64,10 +65,10 @@ var TicTacToe = {
 		// color wypełnienia
 		fillStyle: null,
 		Text: {
-			textAlign: "center",
-			textBaseline: "middle",
-			font: "20pt Calibri",
-			fillStyle: "black"
+			textAlign: 'center',
+			textBaseline: 'middle',
+			font: '20pt Calibri',
+			fillStyle: 'black'
 		}
 	},
 	roundStyle: {
@@ -97,11 +98,11 @@ var TicTacToe = {
 		/**
 		 * Typ przeciwnika
 		 * 1 - komputer
-		 * 2 - drugi uzytkownik
+		 * 2 - drugi gracz
 		 */
 		opponentType: 1,
 		/**
-		 * Określa typ znaku użytkownika
+		 * Określa typ znaku gracza
 		 * 0 - kółko
 		 * 1 - krzyżyk
 		 */
@@ -109,7 +110,7 @@ var TicTacToe = {
 		/**
 		 * Kto rozpoczyna. Wykorzystywany jest tylko przy Typie przeciwnika komputer
 		 * 0 - ja
-		 * 1 - komputer
+		 * 1 - komputer / gracz nr 2
 		 */
 		whoStarts: 0
 	},
@@ -142,6 +143,19 @@ var TicTacToe = {
 		 */
 		CPUpoints: [],
 		/**
+		 * Punkty na planszy komputera 
+		 */
+		lastCPUAttackPoint: null,
+		/**
+		 * Wartość ustawiana w tablicy (planszy) dla gracza 1
+		 */
+		player1PointValue: 1,
+		/**
+		 * Wartość ustawiana w tablicy (planszy) dla gracza 2
+		 * bez względu czy to jest CPU czy gracz fizyczny
+		 */
+		 player2PointValue: 2,
+		/**
 		 * Indeks określający rodzaj ataku z tablicy attacks
 		 */
 		attackFoundIndexOf: [],
@@ -154,20 +168,57 @@ var TicTacToe = {
 		 */
 		lastCPUattackIndexOf: -1,
 		/**
+		 * Stała - określa wartość dla ataku
+		 */
+		ATTACK: 1,
+		/**
+		 * Stała - określa wartość dla obrony
+		 */
+		DEFEND: 0,
+		/**
 		 * Ataki są ustawione priorytetami
 		 * każdy obiekt zawiera
 		 * att - ścieżkę ataku
 		 * 		[0,-1] to wektor przejścia
 		 */
 		attacks: [
+			 // 0
 			 {
-				 att:[[0,-1],[0,-1],[0,-1],[0,4],[0,1],[0,1],[0,1]],
-				 min: 3
+			 	/**
+			 	 * x
+			 	 * x
+			 	 * x
+			 	 * x
+			 	 * x
+			 	 */
+				 att:[[0,-1],[0,-1],[0,3],[0,1],[0,1]],
+				 min: 3,
+				 minAmountBlockPoints: 2
 			 },
+			 // 1
 			 {
-				 att:[[-1,0],[-1,0],[-1,0],[4,0],[1,0],[1,0],[1,0]],
-				 min: 3
+			 	/**
+			 	 * x
+			 	 * x
+			 	 * x
+			 	 * x
+			 	 * x
+			 	 */
+				 att:[[0,1],[0,1],[0,-3],[0,-1],[0,-1]],
+				 min: 3,
+				 minAmountBlockPoints: 2
 			 },
+
+			 // 2
+			 {
+			 	/**
+			 	 * xxxxx
+			 	 */
+				 att:[[-1,0],[-1,0],[3,0],[1,0],[1,0]],
+				 min: 3,
+				 minAmountBlockPoints: 2
+			 },
+			 // 3
 			 {
 				 /**
 				  * x
@@ -177,8 +228,10 @@ var TicTacToe = {
 				  *     x
 				  */
 				 att:[[-1,-1],[-1,-1],[-1,-1],[4,4],[1,1],[1,1],[1,1]],
-				 min: 3
+				 min: 3,
+				 minAmountBlockPoints: 2
 			 },
+			 // 3
 			 {
 				 /**
 				  * x
@@ -187,21 +240,11 @@ var TicTacToe = {
 				  *    x
 				  *     x
 				  */
-				 att:[[1,1],[1,1],[1,1],[-4,-4],[-1,-1],[-1,-1],[-1,-1]],
-				 min: 3
+				 att:[[1,1],[1,1],[-3,-3],[-1,-1],[-1,-1]],
+				 min: 3,
+				 minAmountBlockPoints: 2
 			 },
-			 {
-				 /**
-				  *     x
-				  *    x
-				  *   x
-				  *  x
-				  * x
-				  */
-
-				 att:[[1,-1],[1,-1],[1,-1],[-4,4],[-1,1],[-1,1],[-1,1]],
-				 min: 3
-			 },
+			 // 4
 			 {
 				 /**
 				  *     x
@@ -211,18 +254,37 @@ var TicTacToe = {
 				  * x
 				  */
 
-				 att:[[-1,1],[-1,1],[-1,1],[4,-4],[1,-1],[1,-1],[1,-1]],
-				 min: 3
+				 att:[[1,-1],[1,-1],[-3,3],[-1,1],[-1,1]],
+				 min: 3,
+				 minAmountBlockPoints: 2
 			 },
+			 // 5
+			 {
+				 /**
+				  *     x
+				  *    x
+				  *   x
+				  *  x
+				  * x
+				  */
+
+				 att:[[-1,1],[-1,1],[3,-3],[1,-1],[1,-1]],
+				 min: 3,
+				 minAmountBlockPoints: 2
+			 },
+			 // 6
 			 {
 				 /**
 				  * xx-
 				  *   x
 				  *   x
+				  * 
 				  */
-				 att:[[-1,0],[2,0],[1,1],[0,1],[0,1]],
-				 min: 4
+				 att:[[-1,0],[2,1],[0,1],[0,1],[0,-4]],
+				 min: 4,
+				 minAmountBlockPoints: 1
 			 },
+			 // 7
 			 {
 				 /**
 				  * -xx
@@ -230,8 +292,10 @@ var TicTacToe = {
 				  * x
 				  */
 				 att:[[1,0],[1,0],[-3,1],[0,1],[0,1]],
-				 min: 4
+				 min: 4,
+				 minAmountBlockPoints: 1
 			 },
+			 // 8
 			 {
 				 /**
 				  * x
@@ -239,8 +303,10 @@ var TicTacToe = {
 				  * -xx
 				  */
 				 att:[[1,0],[1,0],[-3,-1],[0,-1],[0,-1]],
-				 min: 4
+				 min: 4,
+				 minAmountBlockPoints: 1
 			 },
+			 // 9
 			 {
 				 /**
 				  *   x
@@ -248,9 +314,117 @@ var TicTacToe = {
 				  * xx-
 				  */
 				 att:[[-1,0],[2,0],[1,-1],[0,-1],[0,-1]],
-				 min: 4
+				 min: 4,
+				 minAmountBlockPoints: 1
 			 },
 		],
+		/**
+		 * Ataki są ustawione priorytetami
+		 * każdy obiekt zawiera
+		 * att - ścieżkę ataku
+		 * 		[0,-1] to wektor przejścia
+		 */
+		attacks2: {
+			// Definiowane na podstawie wielkości tablicy
+			'basicAttackMaxMoves': 0,
+			'basic':[// 0
+				 {
+				 	/**
+				 	 * x
+				 	 * x
+				 	 * x
+				 	 * x
+				 	 * x
+				 	 */
+					 att:[[0,-1],[0,1]],
+					 min: 3,
+					 minAmountBlockPoints: 2
+				 },
+				 // 2
+				 {
+				 	/**
+				 	 * xxxxx
+				 	 */
+					 att:[[-1,0],[1,0]],
+					 min: 3,
+					 minAmountBlockPoints: 2
+				 },
+				 // 3
+				 {
+					 /**
+					  * x
+					  *  x
+					  *   x
+					  *    x
+					  *     x
+					  */
+					 att:[[-1,-1],[1,1]],
+					 min: 3,
+					 minAmountBlockPoints: 2
+				 },
+				 // 4
+				 {
+					 /**
+					  *     x
+					  *    x
+					  *   x
+					  *  x
+					  * x
+					  */
+
+					 att:[[1,-1],[-1,1]],
+					 min: 3,
+					 minAmountBlockPoints: 2
+				 }
+			],
+			'advanced': [
+				 // 6
+				 {
+					 /**
+					  * xx-
+					  *   x
+					  *   x
+					  * 
+					  */
+					 att:[[-1,0],[2,1],[0,1],[0,1],[0,-4]],
+					 min: 4,
+					 minAmountBlockPoints: 1
+				 },
+				 // 7
+				 {
+					 /**
+					  * -xx
+					  * x
+					  * x
+					  */
+					 att:[[1,0],[1,0],[-3,1],[0,1],[0,1]],
+					 min: 4,
+					 minAmountBlockPoints: 1
+				 },
+				 // 8
+				 {
+					 /**
+					  * x
+					  * x
+					  * -xx
+					  */
+					 att:[[1,0],[1,0],[-3,-1],[0,-1],[0,-1]],
+					 min: 4,
+					 minAmountBlockPoints: 1
+				 },
+				 // 9
+				 {
+					 /**
+					  *   x
+					  *   x
+					  * xx-
+					  */
+					 att:[[-1,0],[2,0],[1,-1],[0,-1],[0,-1]],
+					 min: 4,
+					 minAmountBlockPoints: 1
+				 }
+			]
+		},
 		// Określa pozycję rodzaju wybranego ataku przez komputer
 		CPUattackIndexOf: null,
 
@@ -287,7 +461,7 @@ var TicTacToe = {
 					y1s = Math.floor( ( Math.random()*2 ) );
 				}
 				//console.log('	x1='+x1+' y1='+y1+' x1s='+x1s+' y1s='+y1s );
-				if( this.points[x1][y1] == null && ( x1 > 0 && y1 > 0 ) )
+				if( this.points[x1][y1] == null && ( x1 > 0 && y1 > 0 ) ){
 					//this.points[x][y] = 2;
 					if( this.opponentPoints.length === 0 ){
 						this.CPUattackStartPoint = { 'x': x1, 'y':y1 };
@@ -297,15 +471,17 @@ var TicTacToe = {
 						// console.log( '		this.CPUattackStartPoint.x='+this.CPUattackStartPoint.x+' this.CPUattackStartPoint.y='+this.CPUattackStartPoint.y );
 						if( this.CPUattackStartPoint.x > size || this.CPUattackStartPoint.y > size || this.CPUattackStartPoint.x < 0 || this.CPUattackStartPoint.y < 0 ){
 							this.CPUattackStartPoint = null;
+							this.lastCPUAttackPoint = null;
 							this.CPUattackSetStartPoint();
 						}
 					}
-				else
+				}else{
 					this.CPUattackSetStartPoint();
+				}
 			}
 		},
 		/**
-		 * Znajduje wszystkie zaznaczone punkt przeciwnika w tablicy
+		 * @description Znajduje wszystkie zaznaczone punkt przeciwnika w tablicy
 		 * // Aktualnie nie używane
 		 */
 		findOpponentPoints: function(){
@@ -328,89 +504,315 @@ var TicTacToe = {
 		nextMove: function( points ){
 			this.points = points;
 
-			//if( this.opponentPoints.length == 0 ){
-				//this.findOpponentPoints();
-				//console.log( 'opponentPoints:'+this.opponentPoints );
-			//}
-
-			if( !this.defend() )
+			if( !this.analisys() == this.ATTACK ){
 				this.attack();
+			}else{
+				this.defend();
+			}
 
 			return this.points;
 		},
+		analisys: function() {
+
+		},
 		/**
-		 * Stara się obronić przed atakiem
+		 * @description Stara się obronić przed atakiem
 		 */
 		defend: function(){
-			var opi = 0;
-			var size = this.points.length-1;
 			this.possibleBlockPoints = [];
 			this.attackFoundIndexOf = [];
 
 			console.log('Function defend START ----------------' );
-			console.log('this.opponentPoints.lenght='+this.opponentPoints.length);
+			console.log('\t this.opponentPoints.lenght='+this.opponentPoints.length);
+			console.log('\t this.points= '+JSON.stringify( this.points ) );
 
-			// Dla każdego punktu przeciwnika sprawdź
-			for( opi; opi < this.opponentPoints.length; opi++){
-				console.log( '	opponentPointIndex='+opi+' x:'+this.opponentPoints[opi][0]+' y:'+this.opponentPoints[opi][1] );
-				var u = 0;
+			// var attackDetails = this.findAttacks( this.opponentPoints, this.player1PointValue, this.player2PointValue );
+			var attackDetails = this.findAttacks2( this.opponentPoints, this.player1PointValue, this.player2PointValue );
 
-				// Sprawdź każdy typ ataku
-				for( u; u < this.attacks.length; u++ ){
-					var v = 0;
-					var x = this.opponentPoints[opi][0];
-					var y = this.opponentPoints[opi][1];
-					console.log('		Sprawdzam typ ataku nr:'+u+'');
-
-					// Określa ilość znalezionych ruchów przeciwnika w ataku
-					var attackCount = 1;
-					var possibleBlockPoints = [];
-
-					// Jeżeli znalazłeś rodzaj ataku pomiń go przy sprawdzaniu kolejnego pola
-					if( this.attackFoundIndexOf.indexOf(u) === -1){
-						for( v; v < this.attacks[u].att.length; v++ ){
-							//console.log('Atak: '+JSON.stringify(this.attacks[u].att));
-							// Określamy następny punkt do sprawdzenia
-							var x = x+this.attacks[u].att[v][0];
-							var y = y+this.attacks[u].att[v][1];
-							if( x < 0 || y < 0 || x > size || y > size ){
-								break;
-							}else{
-								//console.log( '			Następny punkt do sprawdzenia to x:'+x+' y:'+y+'.' );
-								//console.log( '			Wartość to '+this.points[x][y] );
-
-								if( this.points[x][y] === 1 ){
-									attackCount++;
-								}else if( this.points[x][y] === null ){
-									// ustaw punkt możliwego blokowania
-									possibleBlockPoints.push( { "attIndex": u, "x": x, "y": y  } );
-								}else{
-									attackCount=0;
-									break;
-								}
-							}
-						}
-						if( attackCount >= this.attacks[u].min ){
-							console.log( '		Rozpoznano atak (rodzaj ataku)= '+u+' possibleBlockPoints.length='+JSON.stringify(possibleBlockPoints) );
-							this.attackFoundIndexOf.push(u);
-							this.possibleBlockPoints.push(possibleBlockPoints);
-						} else {
-							//console.log( '		Brak rozpoznanego ataku' );
-						}
-					}
-				}
-			}
+			this.possibleBlockPoints = attackDetails.possibleBlockPoints;
+			// this.attackFoundIndexOf = attackDetails.attackFoundIndexOf;
+			this.attackFoundIndexOf = attackDetails.allPossibleAttacks;
 
 			if( this.possibleBlockPoints.length > 0 ){
-				console.log('	possibleBlockPoints: '+this.possibleBlockPoints[this.possibleBlockPoints.length-1][0].x);
-				this.points[this.possibleBlockPoints[this.possibleBlockPoints.length-1][0].x][this.possibleBlockPoints[this.possibleBlockPoints.length-1][0].y] = 2;
-				this.CPUpoints.push( [x, y] );
+				// this.attackFoundIndexOf.sort(TicTacToe.dynamicSortMultiple('-attackCount','ai'));
+				console.log('\tthis.attackFoundIndexOf: '+JSON.stringify( this.attackFoundIndexOf ));
+				console.log('\tpossibleBlockPoints: '+JSON.stringify( this.possibleBlockPoints ));
+				this.points[this.attackFoundIndexOf[0].possibleBlockPoints[0].x][this.attackFoundIndexOf[0].possibleBlockPoints[0].y] = 2;
+				this.CPUpoints.push( [this.attackFoundIndexOf[0].possibleBlockPoints[0].x, this.attackFoundIndexOf[0].possibleBlockPoints[0].y] );
 				return true;
 			}
 
 			return false;
 		},
 
+		/**
+		 * @description Znajduje ataki na podstawie podanych punktów
+		 *
+		 * @param {Array} points - Punkty gracza
+		 * @param {int}	playerPointValue - wartość w tablicy dla poszukiwanych punktów w ramach ataku gracza
+		 * @param {int} opponentPointValue - wartość w tablicy dla oponenta
+		 * @returns {Object} attackTypes and posible block points
+		 */
+		findAttacks: function( points, playerPointValue, opponentPointValue ){
+			console.log('Function findAttacks START ----------------' );
+
+			var size = this.points.length-1;
+			var attackFoundIndexOf = [];
+			var allPossibleBlockPoints = [];
+			var lastAttackPoint = [];
+			// Dla każdego punktu przeciwnika sprawdź
+			for( var opi=0; opi < points.length; opi++){
+				console.log('\tPointIndex='+opi+' x:'+points[opi][0]+' y:'+points[opi][1] );
+
+				// Sprawdź każdy typ ataku
+				for( var attackIndex=0; attackIndex < this.attacks.length; attackIndex++ ){
+					var moveIndex = 0, lastMoveIndex = 0;
+					var x = points[opi][0];
+					var y = points[opi][1];
+					console.log('\t\tSprawdzam typ ataku nr:'+attackIndex);
+
+					// Określa ilość znalezionych ruchów przeciwnika w ataku
+					var attackCount = 1;
+					var possibleBlockPoints = [];
+
+					// Jeżeli znalazłeś rodzaj ataku pomiń go przy sprawdzaniu kolejnego pola
+					if( attackFoundIndexOf.indexOf(attackIndex) === -1){
+						for( moveIndex; moveIndex < this.attacks[attackIndex].att.length; moveIndex++ ){
+							//console.log('Atak: '+JSON.stringify(this.attacks[attackIndex].att));
+							// Określamy następny punkt do sprawdzenia
+							x = x+this.attacks[attackIndex].att[moveIndex][0];
+							y = y+this.attacks[attackIndex].att[moveIndex][1];
+
+							console.log( '\t\t\tNastępny punkt do sprawdzenia to x:'+x+' y:'+y+'. attackCount= '+attackCount );
+							if( x < 0 || y < 0 || x > size || y > size ){
+								attackCount = 0;
+								break;
+							}else{
+
+								console.log( '\t\t\t\tWartość to '+this.points[x][y]+' playerPointValue='+playerPointValue );
+
+								if( this.points[x][y] === playerPointValue ){
+									attackCount++;
+									lastAttackPoint = [x, y];
+									// Sprawdź czy następny jest pusty
+									if( this.attacks[attackIndex].att[moveIndex+1] !== undefined ){
+										var x2 = x+this.attacks[attackIndex].att[moveIndex+1][0];
+										var y2 = y+this.attacks[attackIndex].att[moveIndex+1][1];
+										console.log('\t\t\t\t\t this.points['+x2+']['+y2+']='+this.points[x2][y2]);
+										if( this.points[x2][y2] == null ){
+											// ustaw punkt możliwego blokowania
+											possibleBlockPoints.push( { 'attIndex': attackIndex, 'x': x2, 'y': y2  } );
+											//console.log('\t\t\t\t\tpossibleBlockPoints.length='+JSON.stringify(possibleBlockPoints));
+										}else if ( this.points[x2][y2] == opponentPointValue ) {
+											attackCount--;
+										}
+									}
+								} else if ( this.points[x][y] == null ){
+									if (moveIndex == 0) {
+										possibleBlockPoints.push( { 'attIndex': attackIndex, 'x': x, 'y': y  } );
+									}
+									if( this.attacks[attackIndex].att[moveIndex+1] !== undefined ){
+										var x2 = x+this.attacks[attackIndex].att[moveIndex+1][0];
+										var y2 = y+this.attacks[attackIndex].att[moveIndex+1][1];
+										if ( this.points[x2][y2] == opponentPointValue ) {
+											console.log('\t\t\t\t\t this.points['+x2+']['+y2+']='+this.points[x2][y2]);
+											attackCount--;
+										}
+									}
+								} else if ( this.points[x][y] == opponentPointValue && moveIndex < this.attacks[attackIndex].att.length){
+									attackCount--;
+								}
+
+							}
+							if( attackCount == this.attacks[attackIndex].min ){
+								lastMoveIndex = moveIndex+1;
+							}
+						}
+					}
+					if( attackCount >= this.attacks[attackIndex].min ){
+						console.log( '\t\t Rozpoznano atak (rodzaj ataku)= '+attackIndex+' possibleBlockPoints.length='+JSON.stringify(possibleBlockPoints) );
+						if( possibleBlockPoints.length > 0){
+							attackFoundIndexOf.push( { 
+								'ai': attackIndex, 
+								'startPoint': points[opi], 
+								'possibleBlockPoints': possibleBlockPoints, 
+								'attackCount': attackCount, 
+								'lastMoveIndex': lastMoveIndex,
+								'lastAttackPoint': lastAttackPoint } );
+
+							allPossibleBlockPoints.push(possibleBlockPoints);
+						} else {
+							console.log('\t\t Atak najwyraźniej został zablokowany');
+						}
+						break;
+					} else {
+						console.log( '\t\t Brak rozpoznanego ataku' );
+					}
+
+				}
+			}
+			return {
+					'attackFoundIndexOf': attackFoundIndexOf,
+					'possibleBlockPoints' : allPossibleBlockPoints
+			 };
+		},
+		/**
+		 * @description Znajduje ataki na podstawie podanych punktów
+		 *
+		 * @param {Array} points - Punkty gracza
+		 * @param {int}	playerPointValue - wartość w tablicy dla poszukiwanych punktów w ramach ataku gracza
+		 * @param {int} opponentPointValue - wartość w tablicy dla oponenta
+		 * @returns {Object} attackTypes and posible block points
+		 */
+		findAttacks2: function( points, playerPointValue, opponentPointValue ){
+			console.log('Function findAttacks START ----------------' );
+
+			var size = this.points.length-1;
+			var allPossibleAttacks = [];
+			var allPossibleBlockPoints = [];
+			var leftBorderAttackPoint = [];
+			var rightBorderAttackPoint = [];
+
+			// Dla każdego punktu przeciwnika sprawdź
+			for( var opi=0; opi < points.length; opi++){
+				console.log('\tPointIndex='+opi+' x:'+points[opi][0]+' y:'+points[opi][1] );
+
+				// Sprawdź każdy typ ataku
+				for( var attackIndex=0; attackIndex < this.attacks2.basic.length; attackIndex++ ){
+					var moveIndex = 0;
+					var x = points[opi][0];
+					var y = points[opi][1];
+					var x2 = null;
+					var y2 = null;
+					var previousPointValue = -1;
+					console.log('\t\tSprawdzam typ ataku nr:'+attackIndex);
+
+					// Określa ilość znalezionych ruchów przeciwnika w ataku
+					var attackCount = 1;
+					var possibleBlockPoints = [];
+
+					// Jeżeli znalazłeś rodzaj ataku pomiń go przy sprawdzaniu kolejnego pola
+					if( allPossibleAttacks.indexOf(attackIndex) === -1){
+
+						while(moveIndex < this.attacks2.basicAttackMaxMoves){
+							// Określamy następny punkt do sprawdzenia
+							x = x+this.attacks2.basic[attackIndex].att[0][0];
+							y = y+this.attacks2.basic[attackIndex].att[0][1];
+
+							console.log( '\t\t\tNastępny punkt do sprawdzenia to x:'+x+' y:'+y+'. attackCount= '+attackCount );
+							if( x < 0 || y < 0 || x > size || y > size ){
+								break;
+							} else {
+								console.log( '\t\t\t\tWartość to '+this.points[x][y]+' playerPointValue='+playerPointValue );
+
+								if( this.points[x][y] === opponentPointValue ){
+									if(previousPointValue == playerPointValue || previousPointValue == -1){
+										attackCount--;
+									}
+									break;
+								} else if( this.points[x][y] === playerPointValue ){
+									attackCount++;
+									leftBorderAttackPoint = [x, y];
+									// Określamy następny punkt do sprawdzenia
+									x2 = x+this.attacks2.basic[attackIndex].att[0][0];
+									y2 = y+this.attacks2.basic[attackIndex].att[0][1];
+
+									if( this.points[x2][y2] == opponentPointValue ){
+										attackCount--;
+										break;
+									}
+
+								} else if( this.points[x][y] == null ) {
+									possibleBlockPoints.push( { 'attIndex': attackIndex, 'x': x, 'y': y  } );
+									// Określamy następny punkt do sprawdzenia
+									x2 = x+this.attacks2.basic[attackIndex].att[0][0];
+									y2 = y+this.attacks2.basic[attackIndex].att[0][1];
+
+									if( this.points[x2][y2] == null ){
+										break;
+									}
+
+								}
+								moveIndex++;
+								previousPointValue = this.points[x][y];
+							}
+
+						}
+
+						// to teraz sprawdź w drugą stronę
+						x = points[opi][0];
+						y = points[opi][1];
+						previousPointValue = -1;
+
+						while(moveIndex < this.attacks2.basicAttackMaxMoves){
+							// Określamy następny punkt do sprawdzenia
+							x = x+this.attacks2.basic[attackIndex].att[1][0];
+							y = y+this.attacks2.basic[attackIndex].att[1][1];
+							console.log( '\t\t\tNastępny punkt do sprawdzenia to x:'+x+' y:'+y+'. attackCount= '+attackCount );
+							if( x < 0 || y < 0 || x > size || y > size ){
+								break;
+							} else {
+								console.log( '\t\t\t\tWartość to '+this.points[x][y]+' playerPointValue='+playerPointValue );
+
+								if( this.points[x][y] === opponentPointValue ){
+									if(previousPointValue == playerPointValue || previousPointValue == -1){
+										attackCount--;
+									}
+
+									break;
+								} else if( this.points[x][y] === playerPointValue ){
+									attackCount++;
+									rightBorderAttackPoint = [x, y];
+									// Określamy następny punkt do sprawdzenia
+									x2 = x+this.attacks2.basic[attackIndex].att[1][0];
+									y2 = y+this.attacks2.basic[attackIndex].att[1][1];
+
+									if( this.points[x2][y2] == opponentPointValue ){
+										attackCount--;
+										break;
+									}
+								} else if( this.points[x][y] == null ) {
+									possibleBlockPoints.push( { 'attIndex': attackIndex, 'x': x, 'y': y  } );
+									// Określamy następny punkt do sprawdzenia
+									x2 = x+this.attacks2.basic[attackIndex].att[1][0];
+									y2 = y+this.attacks2.basic[attackIndex].att[1][1];
+
+									if( this.points[x2][y2] == null ){
+										break;
+									}
+								}
+								moveIndex++;
+							}
+						}
+					}
+					if( attackCount >= this.attacks2.basic[attackIndex].min ){
+						console.log( '\t\t Rozpoznano atak (rodzaj ataku)= '+attackIndex+' possibleBlockPoints.length='+JSON.stringify(possibleBlockPoints) );
+						if( possibleBlockPoints.length > 0){
+							allPossibleAttacks.push( { 
+								'ai': attackIndex, 
+								'startPoint': points[opi], 
+								'possibleBlockPoints': possibleBlockPoints, 
+								'attackCount': attackCount, 
+								'leftBorderAttackPoint': leftBorderAttackPoint,
+								'rightBorderAttackPoint': rightBorderAttackPoint
+								 } );
+
+							allPossibleBlockPoints.push(possibleBlockPoints);
+						} else {
+							console.log('\t\t Atak najwyraźniej został zablokowany');
+						}
+						break;
+					} else {
+						console.log( '\t\t Brak rozpoznanego ataku' );
+					}
+				}
+			}
+			return {
+					'allPossibleAttacks': allPossibleAttacks,
+					'possibleBlockPoints' : allPossibleBlockPoints
+			 };
+
+		},
 		/**
 		 * W przypadku braku obrony atakuje
 		 */
@@ -422,7 +824,7 @@ var TicTacToe = {
 			if( this.CPUattackIndexOf == null ){
 				// Narazie ustawiamy atak 1 z 10
 				// TODO: Ustawić rodzaje ataków w zależności od poziomu zaawansowania
-				this.CPUattackIndexOf = Math.floor( ( Math.random()*this.attacks.length ) );
+				this.setCPUattackIndexOf();
 				console.log( '	Set this.CPUattackIndexOf='+this.CPUattackIndexOf+' '+JSON.stringify(this.attacks[this.CPUattackIndexOf]) );
 			}
 
@@ -431,8 +833,21 @@ var TicTacToe = {
 				this.CPUattackSetStartPoint();
 				this.points[this.CPUattackStartPoint.x][this.CPUattackStartPoint.y] = 2;
 				this.CPUpoints.push( [this.CPUattackStartPoint.x, this.CPUattackStartPoint.y] );
+				this.lastCPUAttackPoint = [this.CPUattackStartPoint.x, this.CPUattackStartPoint.y];
 				return true;
 			} else {
+				// Znajdź ataki CPU aby dopasować najlepszy
+				var cpuAttackDetails = this.findAttacks2( this.CPUpoints, this.player2PointValue, this.player1PointValue );
+				cpuAttackDetails.attackFoundIndexOf = cpuAttackDetails.allPossibleAttacks;
+
+				if( cpuAttackDetails.attackFoundIndexOf.length > 0 ){
+					if( cpuAttackDetails.attackFoundIndexOf[0].ai != this.CPUattackIndexOf ){
+						console.log('\t Changing CPUattackIndexOf from:'+this.CPUattackIndexOf+' to: '+cpuAttackDetails.attackFoundIndexOf[0].ai);
+						this.CPUattackIndexOf = cpuAttackDetails.attackFoundIndexOf[0].ai;
+						this.lastCPUattackIndexOf = cpuAttackDetails.attackFoundIndexOf[0].lastMoveIndex;
+						this.lastCPUAttackPoint = cpuAttackDetails.attackFoundIndexOf[0].leftBorderAttackPoint;
+					}
+				}
 				this.nextAttackFromAttackType();
 			}
 
@@ -441,12 +856,34 @@ var TicTacToe = {
 
 		nextAttackFromAttackType: function(){
 			console.log('Function nextAttackFromAttackType START ----------------' );
-			var lastPoint = this.CPUpoints[this.CPUpoints.length-1];
+			var lastPoint = this.lastCPUAttackPoint;
 			this.lastCPUattackIndexOf++;
-			var vector = this.attacks[this.CPUattackIndexOf].att[this.lastCPUattackIndexOf];
-			this.points[lastPoint[0]+vector[0]][lastPoint[1]+vector[1]] = 2;
-			this.CPUpoints.push( [lastPoint[0]+vector[0], lastPoint[1]+vector[1] ] );
 
+			// console.log('\t attacks='+(JSON.stringify( this.attacks ))+' this.CPUattackIndexOf= '+this.CPUattackIndexOf+' this.lastCPUattackIndexOf='+this.lastCPUattackIndexOf );
+			var vector = this.attacks2.basic[this.CPUattackIndexOf].att[0];
+			console.log('\t lastPoint['+lastPoint[0]+']['+lastPoint[1]+'] =  '+(JSON.stringify( lastPoint ))+' vector='+(JSON.stringify( vector )) );
+			var x = lastPoint[0]+vector[0];
+			var y = lastPoint[1]+vector[1];
+			console.log('\t this.points['+x+']['+y+'] =  '+(JSON.stringify( this.points[x] )) );
+			if( this.points[x][y] === undefined ){
+				console.log('\t Ustawiam punkt ataku '+x+':'+y);
+				this.points[x][y] = 2;
+				this.CPUpoints.push( [x, y] );
+			} else {
+				console.log('\t Atak nie udany '+x+':'+y+' trzeba znaleźć coś innego');
+				this.setCPUattackIndexOf();
+				this.attack();
+			}
+
+		},
+
+		setCPUattackIndexOf: function(){
+			var newCPUattackIndexOf = Math.floor( ( Math.random()*this.attacks2.basic.length ) );
+			if( newCPUattackIndexOf != this.CPUattackIndexOf ){
+				this.CPUattackIndexOf = newCPUattackIndexOf;
+			}
+
+			this.lastCPUattackIndexOf = -1;
 		}
 
 	},
@@ -544,23 +981,27 @@ var TicTacToe = {
 	                    	// Sprawdzamy czy to jest ruch użytkownika jeżeli nie to nie zaznaczamy kolejnego pola
 	                    	console.log( ''+_parent.Moves.isItMyMove );
 	                    	if( _parent.Moves.isItMyMove ){
-	                    		_parent.points[this.j][this.i] = 1;
-	                    		if( _parent.Settings.opponentType === 1 ){
-	                    			_parent.CPU.opponentPoints.push( [this.j,this.i] );
-	                    		}
+	                    		if( _parent.points[this.j][this.i] != TicTacToe.CPU.player2PointValue ){
+		                    		_parent.points[this.j][this.i] = TicTacToe.CPU.player1PointValue;
+		                    		if( _parent.Settings.opponentType === 1 ){
+		                    			_parent.CPU.opponentPoints.push( [this.j,this.i] );
+		                    		}
 
-	                    		console.log('	this.i='+this.i+' this.j='+j);
-	                    		console.log('	this.points.x='+this.points.x+' this.points.y='+this.points.y);
+		                    		console.log('	this.i='+this.i+' this.j='+j);
+		                    		console.log('	this.points.x='+this.points.x+' this.points.y='+this.points.y);
+		                    		if( _parent.winnerPoints == null){
+			                    		_parent.Settings.xType == 0 ? _parent.drawO( this.points ) : _parent.drawX( this.points );
 
-	                    		_parent.Settings.xType == 0 ? _parent.drawO( this.points ) : _parent.drawX( this.points );
+			                    		// Sprawdź czy wygrałem
+			                    		_parent.winnerPoints = _parent.checkWinner( 1, _parent.CPU.opponentPoints );
 
-	                    		// Sprawdź czy wygrałem
-	                    		_parent.winnerPoints = _parent.checkWinner( 1, _parent.CPU.opponentPoints );
-
-	                    		// O ile nie wygrałem
-	                    		if( _parent.winnerPoints == null )
-	                    			// Wykonuje kolejny ruch w przypadku gry z komputerem. Ustawia kolejny ruch w przypadku gry w 2 osoby.
-	                    			_parent.nextMove();
+			                    		// O ile nie wygrałem
+			                    		if( _parent.winnerPoints == null ){
+			                    			// Wykonuje kolejny ruch w przypadku gry z komputerem. Ustawia kolejny ruch w przypadku gry w 2 osoby.
+			                    			_parent.nextMove();
+			                    		}
+			                    	}
+			                    }
 	                    	}
                     	}
                     });
@@ -601,7 +1042,7 @@ var TicTacToe = {
 			this.Moves.isItMyMove = 1;
 			point = { x:point[0], y:point[1] };
 
-			this.Settings.xType == 0 ? this.drawX( point ) : this.drawO( point );
+			this.Settings.xType === 0 ? this.drawX( point ) : this.drawO( point );
 
 		}
 
@@ -609,20 +1050,17 @@ var TicTacToe = {
 	xPrepare: function( xpoint ){
 		var rectStyle = this.rectStyle;
 
-		var rect = this.Board.children[xpoint.y*this.boardSize+xpoint.x-1];
-		console.log(JSON.stringify(rect));
+		var rect = this.Board.children[xpoint.y*this.boardSize+xpoint.x];
+		// console.log(JSON.stringify(rect));
 		var Xo = this.xStyle;
 		Xo.x = rect.attrs.x;
 		Xo.y = rect.attrs.y;
 		Xo.drawFunc = function(context){
 			// context przesuwa punkt początku rysowania na pozycję obiektu klikniętego
-			//console.log(JSON.stringify(context));
+
 			context.beginPath();
-			console.log( this );
 			context.moveTo( 6, 6 );
-			//console.log('moving to x:'+(pointa.x+6)+' y:'+(pointa.y+6));
 			context.lineTo( rectStyle.width-6, rectStyle.height-6 );
-			//context.stroke();
 
 			context.moveTo( rectStyle.width-6, 6 );
 			context.lineTo( 6, rectStyle.height-6 );
@@ -699,6 +1137,37 @@ var TicTacToe = {
 			myarray[i]=new Array( many );
 		return myarray;
 	},
+    dynamicSort: function(property) {
+		var sortOrder = 1;
+		if(property[0] === "-") {
+			sortOrder = -1;
+			property = property.substr(1);
+		}
+
+		return function (a,b) {
+			var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+			return result * sortOrder;
+	    };
+	},
+	dynamicSortMultiple: function() {
+		/*
+		 * save the arguments object as it will be overwritten
+		 * note that arguments object is an array-like object
+		 * consisting of the names of the properties to sort by
+		 */
+		var props = arguments;
+		return function (obj1, obj2) {
+			var i = 0, result = 0, numberOfProperties = props.length;
+			/* try getting a different result from 0 (equal)
+			 * as long as we have extra properties to compare
+			 */
+			while(result === 0 && i < numberOfProperties) {
+				result = TicTacToe.dynamicSort(props[i])(obj1, obj2);
+				i++;
+			}
+			return result;
+		}
+	},
 
 	/**
 	 * Rysuje przycisk
@@ -754,11 +1223,13 @@ var TicTacToe = {
 				pCount = 1;
 				console.log('	Następny atak a2='+a2);
 				// sprawdź 5 kolejnych punktów z ataku
+
 				for( l1; l1 < 4; l1++ ){
 					x2 = x2+attacks[a2][0];
 					y2 = y2+attacks[a2][1];
-					console.log('		x2='+x2+' y2='+y2 );
-					if( typeof this.points[x2] != undefined && typeof this.points[x2][y2] != undefined && this.points[x2][y2] == oppType ){
+					console.log('\t\t x2='+x2+' '+this.points[x2] );
+					//console.log('	this.points '+(this.points[x2][y2]));
+					if( this.points[x2] != undefined && this.points[x2][y2] != undefined && this.points[x2][y2] == oppType ){
 						pCount++;
 						winPoints.push( [x2, y2] );
 					}
@@ -795,6 +1266,7 @@ var TicTacToe = {
 		this.CPU.CPUpoints = [];
 		this.CPU.CPUattackIndexOf = null;
 		this.CPU.CPUattackProgressIndexOf = null;
+		this.CPU.attacks2.basicAttackMaxMoves = this.boardSize;
 	}
 }
 
